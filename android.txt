@@ -1,0 +1,3 @@
+title=Logger
+author=Kang Tsi Ui
+orientation=portrait
