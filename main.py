@@ -33,7 +33,7 @@ class LogWidget(ScrollView):
 			with lbl.canvas.before:
 				Color(0.3,0.4,0.2)
 				lbl.rect = Rectangle(pos=lbl.pos, size=lbl.size)
-				lbl.bind(pos=self.update_rect, size=self.update_rect)
+				lbl.bind(pos=self.update_rect, size=self.update_rect) # update position of label in layout.
 
 			layout.add_widget(lbl)		
 
