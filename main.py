@@ -87,6 +87,20 @@ class LogApp(App):
 
 	def on_start(self):
 		self.show_logger()
+
+	def show_msg(self, msg, layout):
+		lbl = Label(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None))
+		if len(msg) > 300:
+			lbl.shorten = True
+
+		with lbl.canvas.before:
+			Color(0.3,0.4,0.2)
+			lbl.rect = Rectangle(pos=lbl.pos, size=lbl.size)
+			lbl.bind(pos=self.root.update_rect, size=self.root.update_rect) # update position of label in layout.
+
+		layout.add_widget(lbl)		
+
+		
 		
 	def show_logger(self):
 		layout = GridLayout(cols=1, spacing=2, size_hint_y=None)
@@ -96,30 +110,12 @@ class LogApp(App):
 				self.log_from = 'history'
 				break
 
-			lbl = Label(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None))
-			if len(msg) > 300:
-				lbl.shorten = True
+			self.show_msg(msg, layout)
 
-			with lbl.canvas.before:
-				Color(0.3,0.4,0.2)
-				lbl.rect = Rectangle(pos=lbl.pos, size=lbl.size)
-				lbl.bind(pos=self.root.update_rect, size=self.root.update_rect) # update position of label in layout.
-
-			layout.add_widget(lbl)		
 
 		if self.log_from == 'history':
 			for msg in log_from_history():
-				lbl = Label(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None))
-				if len(msg) > 300:
-					lbl.shorten = True
-	
-				with lbl.canvas.before:
-					Color(0.3,0.4,0.2)
-					lbl.rect = Rectangle(pos=lbl.pos, size=lbl.size)
-					lbl.bind(pos=self.root.update_rect, size=self.root.update_rect) # update position of label in layout.
-	
-				layout.add_widget(lbl)		
-
+				self.show_msg(msg, layout)
 			
 
 		self.root.add_widget(layout)
