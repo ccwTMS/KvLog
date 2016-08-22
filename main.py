@@ -7,47 +7,63 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
+from kivy.utils import platform
 
+import os
 import re
 import subprocess
 
+files = {}
+current_log = ''
 
 def get_log_path():
-	log_len = len(LoggerHistory.history)
-	LoggerHistory.history.reverse()
-	for i in range(log_len):
-		msg = LoggerHistory.history[i].getMessage()
-		ret = re.search('Record log in', msg)
-		print ret
-		if ret == None:
-			continue
-		else:
-			path = msg.split(' ')[-1].split('kivy_')[0]
-			return path
-	return None
+	if platform == 'linux':
+		return os.environ['HOME'] + "/.kivy/logs/"
+	elif platform == 'android':
+		return os.path.dirname(os.environ['ANDROID_APP_PATH'])
+	elif paltform == 'ios' or platform == 'macosx':
+		return os.environ['HOME'] + "/Documents/.kivy/logs/"
+	else:
+		return None
 	
+def get_log_files(log_folder):
+	#Logger.info("K: " + log_folder)
+	if os.path.isdir(log_folder):
+		for log_file in os.listdir(log_folder):
+			files[os.stat(log_folder+log_file).st_mtime] = log_folder+log_file
+			#Logger.info("K: file= " + log_folder+log_file)
 
 def get_previous_logfile():
 	path = get_log_path()
-	if path != None:
-		cmd = "ls -t " + path
-		try:
-			ret = subprocess.Popen(cmd , stdout=subprocess.PIPE, shell=True)
-			(output, error) = ret.communicate()
-			if error == None:
-				files = output.split("\n")
-				print(error)
-				return (path, files[1])
-		except OSError:
-			Logger.error("KivyLogger: run %s failed\n" % cmd)
-			return (None, None)
-	return (None, None)
-	
+	#Logger.info("K: path= " + path)
+	if path ==None:
+		return None
+
+	if platform == 'android':
+		dirs = os.listdir(path)
+		for item in dirs:
+			log_folder = path+"/"+item+"/.kivy/logs/"
+			get_log_files(log_folder)
+	#elif platform == 'linux' or platform == 'ios' or platform == 'macosx':
+	else:
+		get_log_files(path)
+
+	timekeys = files.keys()
+	nfiles = len(timekeys)
+	if nfiles > 0:
+		timekeys.sort()
+		timekeys.reverse()
+		file_to_dump = files[timekeys[1]] if nfiles > 1 else files[timekeys[0]]
+		Logger.info("KivyLogger: dumping "  + file_to_dump)
+		current_log = file_to_dump
+		return file_to_dump
+	else:
+		return None
 
 def log_from_previous():
-	(path, target) = get_previous_logfile()
-	if target != None:
-		f = open(path + target)
+	dump_file= get_previous_logfile()
+	if dump_file != None:
+		f = open(dump_file)
 		while True:
 			text = f.readline()
 			if text != '':
@@ -79,8 +95,7 @@ class LogWidget(ScrollView):
 		instance.rect.size = instance.size
 
 
-class LogApp(App):
-	log_from = 'privious'
+class KivyLoggerApp(App):
 
 	def build(self):
 		return LogWidget()
@@ -103,17 +118,19 @@ class LogApp(App):
 		
 		
 	def show_logger(self):
+		global current_log
 		layout = GridLayout(cols=1, spacing=2, size_hint_y=None)
 		layout.bind(minimum_height=layout.setter('height'))
 		for msg in log_from_previous():
 			if msg == None:
-				self.log_from = 'history'
+				Logger.warning("KivyLogger: previous log file not be found, using history log.")
+				current_log = 'history'
 				break
 
 			self.show_msg(msg, layout)
 
 
-		if self.log_from == 'history':
+		if current_log == 'history':
 			for msg in log_from_history():
 				self.show_msg(msg, layout)
 			
@@ -122,4 +139,4 @@ class LogApp(App):
 
 
 if __name__ == "__main__":
-	LogApp().run()
+	KivyLoggerApp().run()
