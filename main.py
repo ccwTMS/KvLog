@@ -24,21 +24,18 @@ def get_log_path():
 		return os.environ['HOME'] + "/.kivy/logs/"
 	elif platform == 'android':
 		return os.path.dirname(os.environ['ANDROID_APP_PATH'])
-	elif paltform == 'ios' or platform == 'macosx':
+	elif paltform == 'ios' or platform == 'macosx': #not yet test~
 		return os.environ['HOME'] + "/Documents/.kivy/logs/"
 	else:
 		return None
 	
 def get_log_files(log_folder):
-	#Logger.info("K: " + log_folder)
 	if os.path.isdir(log_folder):
 		for log_file in os.listdir(log_folder):
 			files[os.stat(log_folder+log_file).st_mtime] = log_folder+log_file
-			#Logger.info("K: file= " + log_folder+log_file)
 
 def get_previous_logfile():
 	path = get_log_path()
-	#Logger.info("K: path= " + path)
 	if path ==None:
 		return None
 
@@ -57,7 +54,7 @@ def get_previous_logfile():
 		timekeys.sort()
 		timekeys.reverse()
 		file_to_dump = files[timekeys[1]] if nfiles > 1 else files[timekeys[0]]
-		Logger.info("KivyLogger: dumping "  + file_to_dump)
+		Logger.info("KvLog: dumping "  + file_to_dump)
 		current_log = file_to_dump
 		return file_to_dump
 	else:
@@ -156,7 +153,7 @@ class KvLogApp(App):
 		layout.bind(minimum_height=layout.setter('height'))
 		for msg in log_from_previous():
 			if msg == None:
-				Logger.warning("KivyLogger: previous log file not be found, using history log.")
+				Logger.warning("KvLog: previous log file not be found, using history log.")
 				current_log = 'history'
 				break
 
