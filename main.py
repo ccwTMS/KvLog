@@ -1,3 +1,6 @@
+from kivy.config import Config
+#Config.set('graphics','width','400')
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
@@ -15,6 +18,7 @@ import subprocess
 
 files = {}
 current_log = ''
+
 
 def get_log_path():
 	if platform == 'linux':
@@ -105,8 +109,10 @@ class KivyLoggerApp(App):
 
 	def show_msg(self, msg, layout):
 		lbl = Label(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None))
-		if len(msg) > 300:
-			lbl.shorten = True
+		lbl.texture_update()
+		lbl.size = lbl.texture_size
+		#if len(msg) > 300:
+		#	lbl.shorten = True
 
 		with lbl.canvas.before:
 			Color(0.3,0.4,0.2)
