@@ -14,7 +14,6 @@ from kivy.utils import platform
 
 import os
 import re
-import subprocess
 
 files = {}
 current_log = ''
@@ -86,12 +85,38 @@ def log_from_history():
 				"[" + LoggerHistory.history[i].levelname + "] " + \
 				LoggerHistory.history[i].getMessage()
 
+def highlight_KvLog(msg):
+	escape_msg = re.sub('\[', '&bl;', msg, 1)
+	escape2_msg = re.sub('\]', '&br;', escape_msg, 1)
+	if re.search('INFO', msg, 1) != None:
+		h_msg = re.sub('INFO', '[color=00FF00]INFO[/color]', escape2_msg, 1)
+		return h_msg
+	elif re.search('WARNING', msg, 1) != None:
+		h_msg = re.sub('WARNING', '[color=FFFF00]WARNING[/color]', escape2_msg, 1)
+		return h_msg
+	elif re.search('ERROR', msg, 1) != None:
+		h_msg = re.sub('ERROR', '[color=FF0000]ERROR[/color]', escape2_msg, 1)
+		return h_msg
+	elif re.search('CRITICAL', msg, 1) != None:
+		h_msg = re.sub('CRITICAL', '[color=FF0000]CRITICAL[/color]', escape2_msg, 1)
+		return h_msg
+	elif re.search('TRACE', msg, 1) != None:
+		h_msg = re.sub('TRACE', '[color=0000FF]TRACE[/color]', escape2_msg, 1)
+		return h_msg
+	elif re.search('DEBUG', msg, 1) != None:
+		h_msg = re.sub('DEBUG', '[color=0000FF]DEBUG[/color]', escape2_msg, 1)
+		return h_msg
+ 
+	else:
+		return msg
+	
 
-class LogWidget(ScrollView):
+
+class KvLogWidget(ScrollView):
 	def __init__(self, **kwargs):
 		self.size_hint=(1, None)
 		self.size=(Window.width, Window.height)
-		super(LogWidget, self).__init__(**kwargs)
+		super(KvLogWidget, self).__init__(**kwargs)
 
 
 	def update_rect(self, instance, value):
@@ -99,16 +124,18 @@ class LogWidget(ScrollView):
 		instance.rect.size = instance.size
 
 
-class KivyLoggerApp(App):
+class KvLogApp(App):
 
 	def build(self):
-		return LogWidget()
+		return KvLogWidget()
 
 	def on_start(self):
 		self.show_logger()
 
 	def show_msg(self, msg, layout):
-		lbl = Label(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None))
+		h_msg = highlight_KvLog(msg)
+		
+		lbl = Label(text=h_msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None), markup=True)
 		lbl.texture_update()
 		lbl.size = lbl.texture_size
 		#if len(msg) > 300:
@@ -145,4 +172,4 @@ class KivyLoggerApp(App):
 
 
 if __name__ == "__main__":
-	KivyLoggerApp().run()
+	KvLogApp().run()

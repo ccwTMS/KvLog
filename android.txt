@@ -1,3 +1,3 @@
-title=KivyLogger
+title=KvLog
 author=Kang Tsi Ui
 orientation=portrait
