@@ -11,11 +11,13 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 from kivy.utils import platform
+from kivy.uix.screenmanager import ScreenManager, Screen
 
 import os
 import re
 
 files = {}
+timekeys=[]
 current_log = ''
 
 
@@ -28,13 +30,16 @@ def get_log_path():
 		return os.environ['HOME'] + "/Documents/.kivy/logs/"
 	else:
 		return None
+
 	
 def get_log_files(log_folder):
 	if os.path.isdir(log_folder):
 		for log_file in os.listdir(log_folder):
 			files[os.stat(log_folder+log_file).st_mtime] = log_folder+log_file
 
+
 def get_previous_logfile():
+	global timekeys
 	path = get_log_path()
 	if path ==None:
 		return None
@@ -60,6 +65,7 @@ def get_previous_logfile():
 	else:
 		return None
 
+
 def log_from_previous():
 	dump_file= get_previous_logfile()
 	if dump_file != None:
@@ -81,6 +87,7 @@ def log_from_history():
 		yield str(LoggerHistory.history[i].lineno)+": " + \
 				"[" + LoggerHistory.history[i].levelname + "] " + \
 				LoggerHistory.history[i].getMessage()
+
 
 def highlight_KvLog(msg):
 	escape_msg = re.sub('\[', '&bl;', msg, 1)
@@ -106,7 +113,28 @@ def highlight_KvLog(msg):
  
 	else:
 		return msg
+
+
+def update_rect(instance, value):
+	instance.rect.pos = instance.pos
+	instance.rect.size = instance.size
 	
+
+def show_msg(self, msg, layout, color):
+	h_msg = highlight_KvLog(msg)
+	
+	lbl = Label(text=h_msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None), markup=True)
+	lbl.texture_update()
+	lbl.size = lbl.texture_size
+	#if len(msg) > 300:
+	#	lbl.shorten = True
+
+	with lbl.canvas.before:
+		Color(*color)
+		lbl.rect = Rectangle(pos=lbl.pos, size=lbl.size)
+		lbl.bind(pos=update_rect, size=update_rect) # update position of label in layout.
+
+	layout.add_widget(lbl)		
 
 
 class KvLogWidget(ScrollView):
@@ -115,38 +143,9 @@ class KvLogWidget(ScrollView):
 		self.size=(Window.width, Window.height)
 		super(KvLogWidget, self).__init__(**kwargs)
 
+	def show_log_data(self, msg, layout):
+		show_msg(self, msg, layout, [0.3,0.4,0.2])
 
-	def update_rect(self, instance, value):
-		instance.rect.pos = instance.pos
-		instance.rect.size = instance.size
-
-
-class KvLogApp(App):
-
-	def build(self):
-		return KvLogWidget()
-
-	def on_start(self):
-		self.show_logger()
-
-	def show_msg(self, msg, layout):
-		h_msg = highlight_KvLog(msg)
-		
-		lbl = Label(text=h_msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None), markup=True)
-		lbl.texture_update()
-		lbl.size = lbl.texture_size
-		#if len(msg) > 300:
-		#	lbl.shorten = True
-
-		with lbl.canvas.before:
-			Color(0.3,0.4,0.2)
-			lbl.rect = Rectangle(pos=lbl.pos, size=lbl.size)
-			lbl.bind(pos=self.root.update_rect, size=self.root.update_rect) # update position of label in layout.
-
-		layout.add_widget(lbl)		
-
-		
-		
 	def show_logger(self):
 		global current_log
 		layout = GridLayout(cols=1, spacing=2, size_hint_y=None)
@@ -157,15 +156,89 @@ class KvLogApp(App):
 				current_log = 'history'
 				break
 
-			self.show_msg(msg, layout)
-
+			self.show_log_data(msg, layout)
 
 		if current_log == 'history':
 			for msg in log_from_history():
-				self.show_msg(msg, layout)
+				self.show_log_data(msg, layout)
 			
+		self.add_widget(layout)
 
-		self.root.add_widget(layout)
+
+class KvLogFileWidget(ScrollView):
+	def __init__(self, **kwargs):
+		self.size_hint=(1, None)
+		self.size=(Window.width, Window.height)
+		super(KvLogFileWidget, self).__init__(**kwargs)
+
+	def show_file_name(self, msg, layout):
+		show_msg(self, msg, layout, (0.8,0.2,0.6))
+
+	def show_files(self):
+		layout = GridLayout(cols=1, spacing=2, size_hint_y=None)
+		layout.bind(minimum_height=layout.setter('height'))
+		for t in range(len(timekeys)):
+			self.show_file_name(files[timekeys[t]],layout)
+
+		self.add_widget(layout)
+	
+
+
+
+class LogScreen(Screen):
+	def __init__(self, **kwargs):
+		super(LogScreen, self).__init__(**kwargs)
+		self.log = KvLogWidget()
+		self.add_widget(self.log)
+		self.size_hint=(1, None)
+
+	def on_touch_down(self, touch):
+		self.touch_pos = touch.pos
+		super(LogScreen, self).on_touch_down(touch)
+
+	def on_touch_up(self, touch):
+		super(LogScreen, self).on_touch_up(touch)
+		if (self.touch_pos[0] - 20) > touch.pos[0]:
+			self.parent.transition.direction = 'left'
+			self.parent.current = 'files'
+
+
+class FilesScreen(Screen):
+	def __init__(self, **kwargs):
+		super(FilesScreen, self).__init__(**kwargs)
+		self.logfiles = KvLogFileWidget()
+		self.add_widget(self.logfiles)
+		self.size_hint=(1, None)
+
+	def on_touch_down(self, touch):
+		self.touch_pos = touch.pos
+		super(FilesScreen, self).on_touch_down(touch)
+
+	def on_touch_up(self, touch):
+		super(FilesScreen, self).on_touch_up(touch)
+		if self.touch_pos[0] < (touch.pos[0] - 20):
+			self.parent.transition.direction = 'right'
+			self.parent.current = 'log'
+
+
+class KvLogScreenManager(ScreenManager):
+	def __init__(self, **kwargs):
+		super(KvLogScreenManager, self).__init__(**kwargs)
+		self.logscreen = LogScreen(name='log')
+		self.add_widget(self.logscreen)
+		self.logscreen.log.show_logger()
+		self.filesscreen = FilesScreen(name='files')
+		self.add_widget(self.filesscreen)
+		self.current = 'log'
+		self.filesscreen.logfiles.show_files()
+
+
+class KvLogApp(App):
+	def build(self):
+		return KvLogScreenManager()
+
+	def on_start(self):
+		pass
 
 
 if __name__ == "__main__":
