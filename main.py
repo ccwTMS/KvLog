@@ -145,9 +145,8 @@ def show_msg_label(self, msg, layout, color):
 
 
 def show_msg_button(self, msg, layout, color, action_func):
-	h_msg = highlight_KvLog(msg)
 	
-	btn = Button(text=h_msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None), markup=True)
+	btn = Button(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None), markup=True)
 	btn.texture_update()
 	btn.size = btn.texture_size
 	btn.bind(on_release = action_func)
@@ -155,7 +154,7 @@ def show_msg_button(self, msg, layout, color, action_func):
 	with btn.canvas.before:
 		Color(*color)
 		btn.rect = Rectangle(pos=btn.pos, size=btn.size)
-		btn.bind(pos=update_rect, size=update_rect) # update position of label in layout.
+		btn.bind(pos=update_rect, size=update_rect)
 	
 	layout.add_widget(btn)		
 
