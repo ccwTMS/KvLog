@@ -7,12 +7,13 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
-from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 from kivy.utils import platform
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
+from plyer import accelerometer
+from kivy.clock import Clock
 
 import os
 import re
@@ -192,6 +193,8 @@ class KvLogWidget(ScrollView):
 
 
 class KvLogFileWidget(ScrollView):
+	layout = ObjectProperty(None)
+
 	def __init__(self, **kwargs):
 		self.size_hint=(1, None)
 		self.size=(Window.width, Window.height)
@@ -201,14 +204,17 @@ class KvLogFileWidget(ScrollView):
 		show_msg_button(self, msg, layout, (0.8,0.2,0.6), self.show_choosed_file)
 
 	def show_files(self):
-		layout = GridLayout(cols=1, spacing=2, size_hint_y=None)
-		layout.bind(minimum_height=layout.setter('height'))
+		if self.layout:
+			self.remove_widget(self.layout)
+		self.layout = GridLayout(cols=1, spacing=2, size_hint_y=None)
+		self.layout.bind(minimum_height=self.layout.setter('height'))
 		for t in range(len(timekeys)):
-			self.show_file_name(files[timekeys[t]],layout)
+			self.show_file_name(files[timekeys[t]],self.layout)
 
-		self.add_widget(layout)
+		self.add_widget(self.layout)
 
 	def show_choosed_file(self, choosed):
+		current_log = choosed.text
 		self.parent.parent.transition.direction = 'right'
 		self.parent.parent.current = 'log'
 		self.parent.parent.logscreen.log.show_logger(log_from_choosed(choosed.text))
@@ -263,12 +269,46 @@ class KvLogScreenManager(ScreenManager):
 
 
 class KvLogApp(App):
+	rota = 0
+
 	def build(self):
-		return KvLogScreenManager()
+		self.sm = KvLogScreenManager()
+		return self.sm
 
 	def on_start(self):
-		pass
+		accelerometer.enable()
+		Clock.schedule_interval(self.check_rotation, 3.)
+
+	def check_rotation(self, dt):
+		val = accelerometer.acceleration
+		new_rota = 0
+		if val[0] is not None:
+			if val[0] > 6 and abs(val[1]) < 2 :
+				new_rota = 270
+			elif val[0] < -6 and abs(val[1]) < 2 :
+				new_rota = 90
+			elif abs(val[0]) < 2 and val[1] > 6 :
+				new_rota = 0
+			elif abs(val[0] < 2) and val[1] < -6 :
+				new_rota = 180
+			
+			if new_rota is not self.rota:
+				self.rota = new_rota
+				Window.rotation = new_rota
+				if self.sm.current is 'files':
+					self.sm.filesscreen.logfiles.show_files()
+				elif self.sm.current is 'log':
+					if current_log is 'history': 
+						self.sm.logscreen.log.show_logger(log_from_history())
+					elif current_log is not '':
+						self.sm.logscreen.log.show_logger(current_log)
+				
+			
+	
+			
 
 
 if __name__ == "__main__":
+	from kivy.core.window import Window
+	Window.fullscreen='auto'
 	KvLogApp().run()
