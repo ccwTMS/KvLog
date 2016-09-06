@@ -220,8 +220,8 @@ class KvLogFileWidget(ScrollView):
 		global current_log
 		current_log = choosed.text
 		self.parent.parent.transition.direction = 'right'
-		self.parent.parent.current = 'log'
 		self.parent.parent.logscreen.log.show_logger(log_from_choosed(choosed.text))
+		self.parent.parent.current = 'log'
 		
 
 class LogScreen(Screen):
