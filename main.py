@@ -42,6 +42,8 @@ def get_log_files(log_folder):
 
 def get_previous_logfile():
 	global timekeys
+	global current_log
+
 	path = get_log_path()
 	if path ==None:
 		return None
@@ -214,6 +216,7 @@ class KvLogFileWidget(ScrollView):
 		self.add_widget(self.layout)
 
 	def show_choosed_file(self, choosed):
+		global current_log
 		current_log = choosed.text
 		self.parent.parent.transition.direction = 'right'
 		self.parent.parent.current = 'log'
@@ -221,6 +224,7 @@ class KvLogFileWidget(ScrollView):
 		
 
 class LogScreen(Screen):
+	touch_pos = (0,0)
 	def __init__(self, **kwargs):
 		super(LogScreen, self).__init__(**kwargs)
 		self.log = KvLogWidget()
@@ -239,6 +243,7 @@ class LogScreen(Screen):
 
 
 class FilesScreen(Screen):
+	touch_pos = (0,0)
 	def __init__(self, **kwargs):
 		super(FilesScreen, self).__init__(**kwargs)
 		self.logfiles = KvLogFileWidget()
@@ -277,9 +282,10 @@ class KvLogApp(App):
 
 	def on_start(self):
 		accelerometer.enable()
-		Clock.schedule_interval(self.check_rotation, 3.)
+		Clock.schedule_interval(self.check_rotation, 1.)
 
 	def check_rotation(self, dt):
+		global current_log
 		val = accelerometer.acceleration
 		new_rota = 0
 		if val[0] is not None:
@@ -289,20 +295,47 @@ class KvLogApp(App):
 				new_rota = 90
 			elif abs(val[0]) < 2 and val[1] > 6 :
 				new_rota = 0
-			elif abs(val[0] < 2) and val[1] < -6 :
+			elif abs(val[0]) < 2 and val[1] < -6 :
 				new_rota = 180
 			
 			if new_rota is not self.rota:
+				old_current_screen = self.sm.current
 				self.rota = new_rota
 				Window.rotation = new_rota
+
+				self.sm.remove_widget(self.sm.logscreen)
+				self.sm.logscreen = LogScreen(name='log')
+				self.sm.add_widget(self.sm.logscreen)
+				self.sm.remove_widget(self.sm.filesscreen)
+				self.sm.filesscreen = FilesScreen(name='files')
+				self.sm.add_widget(self.sm.filesscreen)
+
+				if current_log is 'history': 
+					self.sm.logscreen.log.show_logger(log_from_history())
+				elif current_log is not '':
+					self.sm.logscreen.log.show_logger(log_from_choosed(current_log))
+
+				self.sm.filesscreen.logfiles.show_files()
+
+				self.sm.current = old_current_screen
+	
+				"""
 				if self.sm.current is 'files':
+					self.sm.remove_widget(self.sm.filesscreen)
+					self.sm.filesscreen = FilesScreen(name='files')
+					self.sm.add_widget(self.sm.filesscreen)
 					self.sm.filesscreen.logfiles.show_files()
+					self.sm.current = 'files'
 				elif self.sm.current is 'log':
+					self.sm.remove_widget(self.sm.logscreen)
+					self.sm.logscreen = LogScreen(name='log')
+					self.sm.add_widget(self.sm.logscreen)
 					if current_log is 'history': 
 						self.sm.logscreen.log.show_logger(log_from_history())
 					elif current_log is not '':
-						self.sm.logscreen.log.show_logger(current_log)
-				
+						self.sm.logscreen.log.show_logger(log_from_choosed(current_log))
+					self.sm.current = 'log'
+				"""
 			
 	
 			
