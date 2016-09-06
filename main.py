@@ -2,15 +2,16 @@ from kivy.config import Config
 #Config.set('graphics','width','400')
 
 from kivy.app import App
+from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.graphics import Color, Rectangle
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 from kivy.utils import platform
-from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
 from plyer import accelerometer
 from kivy.clock import Clock
@@ -149,7 +150,7 @@ def show_msg_label(self, msg, layout, color):
 
 def show_msg_button(self, msg, layout, color, action_func):
 	
-	btn = Button(text=msg, size_hint_y=None, width=Window.width, text_size=(Window.width, None), markup=True)
+	btn = Button(text=msg, size_hint_y=None, width=Window.width, line_height = 2.0 if Window.width > Window.height else 1, text_size=(Window.width, None), markup=True)
 	btn.texture_update()
 	btn.size = btn.texture_size
 	btn.bind(on_release = action_func)
@@ -281,13 +282,14 @@ class KvLogApp(App):
 		return self.sm
 
 	def on_start(self):
-		accelerometer.enable()
-		Clock.schedule_interval(self.check_rotation, 1.)
+		if platform == 'android' or platform == 'ios':
+			accelerometer.enable()
+			Clock.schedule_interval(self.check_rotation, 1 / 20.)
 
 	def check_rotation(self, dt):
 		global current_log
 		val = accelerometer.acceleration
-		new_rota = 0
+		new_rota = self.rota
 		if val[0] is not None:
 			if val[0] > 6 and abs(val[1]) < 2 :
 				new_rota = 270
@@ -299,7 +301,9 @@ class KvLogApp(App):
 				new_rota = 180
 			
 			if new_rota is not self.rota:
+				Clock.unschedule(self.check_rotation)
 				old_current_screen = self.sm.current
+
 				self.rota = new_rota
 				Window.rotation = new_rota
 
@@ -318,30 +322,13 @@ class KvLogApp(App):
 				self.sm.filesscreen.logfiles.show_files()
 
 				self.sm.current = old_current_screen
-	
-				"""
-				if self.sm.current is 'files':
-					self.sm.remove_widget(self.sm.filesscreen)
-					self.sm.filesscreen = FilesScreen(name='files')
-					self.sm.add_widget(self.sm.filesscreen)
-					self.sm.filesscreen.logfiles.show_files()
-					self.sm.current = 'files'
-				elif self.sm.current is 'log':
-					self.sm.remove_widget(self.sm.logscreen)
-					self.sm.logscreen = LogScreen(name='log')
-					self.sm.add_widget(self.sm.logscreen)
-					if current_log is 'history': 
-						self.sm.logscreen.log.show_logger(log_from_history())
-					elif current_log is not '':
-						self.sm.logscreen.log.show_logger(log_from_choosed(current_log))
-					self.sm.current = 'log'
-				"""
+
+				Clock.schedule_interval(self.check_rotation, 1 / 10.)
 			
 	
 			
 
 
 if __name__ == "__main__":
-	from kivy.core.window import Window
-	Window.fullscreen='auto'
+	#Window.fullscreen='auto'
 	KvLogApp().run()
