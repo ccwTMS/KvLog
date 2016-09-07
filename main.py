@@ -1,3 +1,4 @@
+import kivy
 from kivy.config import Config
 #Config.set('graphics','width','400')
 
@@ -26,6 +27,15 @@ current_log = ''
 
 
 def get_log_path():
+
+	if platform == 'android':
+		return os.path.dirname(os.environ['ANDROID_APP_PATH'])
+	elif platform == 'linux' or paltform == 'ios' or platform == 'macosx': # not yet tested on iOS and OSX.
+		return kivy.kivy_home_dir + "/logs/"
+	else:
+		return None
+
+	"""
 	if platform == 'linux':
 		return os.environ['HOME'] + "/.kivy/logs/"
 	elif platform == 'android':
@@ -34,6 +44,7 @@ def get_log_path():
 		return os.environ['HOME'] + "/Documents/.kivy/logs/"
 	else:
 		return None
+	"""
 
 	
 def get_log_files(log_folder):
