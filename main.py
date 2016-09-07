@@ -13,8 +13,9 @@ from kivy.graphics import Color, Rectangle
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 from kivy.utils import platform
 from kivy.properties import ObjectProperty
-from plyer import accelerometer
 from kivy.clock import Clock
+
+from plyer import accelerometer
 
 import os
 import re
