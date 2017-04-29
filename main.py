@@ -73,7 +73,8 @@ def get_previous_logfile():
 	timekeys = files.keys()
 	nfiles = len(timekeys)
 	if nfiles > 0:
-		timekeys.sort()
+		timekeys = sorted(timekeys)
+		timekeys=list(timekeys)
 		timekeys.reverse()
 		file_to_dump = files[timekeys[1]] if nfiles > 1 else files[timekeys[0]]
 		Logger.info("KvLog: dumping "  + file_to_dump)
