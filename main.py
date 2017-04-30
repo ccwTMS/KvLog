@@ -1,7 +1,9 @@
-import kivy
 from kivy.config import Config
 #Config.set('graphics','width','400')
+Config.set('kivy','log_dir','/sdcard/test/.kivy/logs')
+Config.write()
 
+import kivy
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -29,7 +31,8 @@ current_log = ''
 def get_log_path():
 
 	if platform == 'android':
-		return os.path.dirname(os.environ['ANDROID_APP_PATH'])
+		#return os.path.dirname(os.environ['ANDROID_APP_PATH'])
+		return '/sdcard'
 	elif platform == 'linux' or paltform == 'ios' or platform == 'macosx': # not yet tested on iOS and OSX.
 		return kivy.kivy_home_dir + "/logs/"
 	else:
