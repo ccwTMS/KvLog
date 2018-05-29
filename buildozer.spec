@@ -36,6 +36,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3,kivy
+#requirements = plyer,python3crystax,kivy
 requirements = plyer,python2,kivy
 
 # (str) Custom source folders for requirements
@@ -103,7 +104,7 @@ android.minapi = 14
 #android.private_storage = True
 
 # (str) Android NDK directory (if empty, it will be automatically downloaded.)
-#android.ndk_path =
+#android.ndk_path = /DATA/code/crystax-ndk-10.3.2
 
 # (str) Android SDK directory (if empty, it will be automatically downloaded.)
 #android.sdk_path =
